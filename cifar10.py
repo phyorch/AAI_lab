@@ -32,7 +32,7 @@ import os
 
 # Directory where you want to download and save the data-set.
 # Set this before you start calling any of the functions below.
-data_path = "data/"
+data_path = "C:/Users/Phyorch/Desktop/Learning/Advanced Aritficial Intellegent/AAI_lab/data_lab8"
 
 # URL for the data-set on the internet.
 data_url = "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
@@ -77,8 +77,8 @@ def _get_file_path(filename=""):
     If filename=="" then return the directory of the files.
     """
 
-    return os.path.join(data_path, "cifar-10-batches-py/", filename)
-
+    return os.path.join(data_path,filename)
+ #"cifar-10-batches-py/",
 
 def _unpickle(filename):
     """
