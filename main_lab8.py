@@ -65,14 +65,15 @@ def main():
                  all_cls_names=class_names, smooth=True)
 
     # Build your predictor
-    train(images_train, labels_train)
+    Network = train(images_train, labels_train)
 
     # Visualize your prediction
     samples = random.sample(range(len(images_test)), 9)
+    cls_idx_pred = predict(images_test[samples], cls_idx_test[samples], Network)
     plot_9images(images=images_test[samples], cls_idx_true=cls_idx_test[samples],
-                 cls_idx_pred=predict(images_test[samples]), all_cls_names=class_names, smooth=True)
+                 cls_idx_pred=predict(images_test[samples], cls_idx_test, Network), all_cls_names=class_names, smooth=True)
 
-    print(f'\nAccuracy: {(predict(images_test) == cls_idx_test).mean() * 100}%\n')
+    print(f'\nAccuracy: {(predict(images_test, cls_idx_test, Network) == cls_idx_test).mean() * 100}%\n')
 
 if __name__ == '__main__':
     main()

@@ -3,9 +3,9 @@ class Layer(object):
     def __init__(self, layer_order, layer_size):
         self.size = layer_size
         self.order = layer_order
-        self.node = np.random.randn(self.size, 1)
+        self.node = 3 * np.random.randn(self.size, 1)
         self.error = np.random.randn(self.size, 1)
-        self.bias = np.random.randn(self.size, 1)
+        self.bias = 3 * np.random.randn(self.size, 1)
     def Theta_init(self, next_layer_size):
         self.theta = np.random.randn(next_layer_size, self.size)
 
@@ -84,13 +84,8 @@ def Test(Network, X, Y):
     return right, accuracy, predict
 
 
-def code(Y):
-    y_network = np.zeros((len(Y), 10))
-    for i in range(len(Y)):
-        y_network[i, Y[i]] = 1
-    return y_network
 
-data = pd.read_csv('C:/Users/Phyorch/Desktop/Learning/Mchine learning/project and homework/lab3/train.csv')
+'''data = pd.read_csv('C:/Users/Phyorch/Desktop/Learning/Mchine learning/project and homework/lab3/train.csv')
 data.as_matrix
 data = np.array(data)
 labels = data[:, 0]
@@ -104,15 +99,53 @@ test_Y = labels[39000:42000]
 
 Network = Network_initail(sizelist)
 Network = Training(Network, X, Y)
-right, accuracy, predict = Test(Network, test_X, test_Y)
+right, accuracy, predict = Test(Network, test_X, test_Y)'''
 
 
 #images shape = (50000,32,32,3)
-def train(images, one_hot_labels):
-    raise NotImplementedError
+def train(images, labels):
+    learning_rate = 0.1
+    sizelist = [32*32*3, 50, 10]
+    Network = Network_initail(sizelist)
+    for m in range(len(images)):
+        image = images[m]
+        y = labels[m]
+        image = image.flatten()  # the RGB image is transfered to 3 layer of monochromatic image in a row array
+        image.shape = (image.shape[0], 1)
+        y.shape = (y.shape[0], 1)
+        Network = FP_process(Network, image)
+        Network = BP_process(Network, y)
+        for l in range(len(Network) - 1):
+            ll = l + 1
+            layer = Network[l]
+            post_layer = Network[ll]
+            layer.theta -= learning_rate * np.dot(post_layer.error, layer.node.T)
+            post_layer.bias -= learning_rate * post_layer.error
+    return Network
+    #raise NotImplementedError
+
 
 #images shape = (10000,32,32,3)
-def predict(images):
+def predict(images, idx, Network):
+    prediction = []
+    correct = 0
+    for m in range(len(images)):
+        image = images[m]
+        y = idx[m]
+        image = image.flatten()
+        image.shape = (image.shape[0], 1)
+        Network = FP_process(Network, image)
+        evaluate = Network[-1].node
+        evaluate.shape = (1, evaluate.shape[0])
+        evaluate = evaluate[0]
+        evaluate = evaluate.tolist()
+        values = evaluate.index(max(evaluate)) # find the position of the max value of the output , the posistion is the class of the image
+        prediction.append(values)
+        if values == idx[m]:
+            correct += 1
+    accuracy = correct / len(idx)
+    prediction = np.array(prediction)
+    return prediction#, correct, accuracy
     # Return a Numpy ndarray with the length of len(images).
     # e.g. np.zeros((len(images),), dtype=int) means all predictions are 'airplane's
-    raise NotImplementedError
+    # raise NotImplementedError

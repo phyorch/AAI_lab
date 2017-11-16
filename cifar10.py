@@ -141,7 +141,7 @@ def _load_data(filename):
     return images, cls
 
 
-def one_hot_encoded(class_numbers, num_classes=None):
+def one_hot_encoded(class_numbers, num_classes=None):#class_numbers is the label list   num_classes is 10 class
     """
     Generate the One-Hot encoded class-labels from an array of integers.
 
