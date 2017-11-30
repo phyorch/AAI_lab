@@ -47,42 +47,6 @@ def Network_initail(size, layer_num=3):
     return Network
 
 
-def Training(Network, X, Y, learning_rate=0.2):
-    M = len(Y)
-    for m in range(M):
-        x = X[m]
-        y = Y[m]
-        x.shape = (x.shape[0],1)
-        y.shape = (y.shape[0],1)
-        Network = FP_process(Network, x)
-        Network = BP_process(Network, y)
-        for l in range(len(Network) - 1):
-            ll = l + 1
-            layer = Network[l]
-            post_layer = Network[ll]
-            # Network[l].node.shape = (1,Network[l].size)
-            layer.theta -= learning_rate * np.dot(post_layer.error, layer.node.T)
-            post_layer.bias -= learning_rate * post_layer.error
-    return Network
-
-def Test(Network, X, Y):
-    predict = []
-    right = 0
-    for i in range(X.shape[0]):
-        x = X[i]
-        x.shape = (x.shape[0], 1)
-        Network = FP_process(Network, x)
-        evaluate = Network[-1].node
-        evaluate.shape = (1, evaluate.shape[0])
-        evaluate = evaluate[0]
-        evaluate = evaluate.tolist()
-        values = evaluate.index(max(evaluate))
-        predict.append(values)
-        if values==Y[i]:
-            right += 1
-    accuracy = right/len(Y)
-    return right, accuracy, predict
-
 
 
 '''data = pd.read_csv('C:/Users/Phyorch/Desktop/Learning/Mchine learning/project and homework/lab3/train.csv')
@@ -105,15 +69,16 @@ right, accuracy, predict = Test(Network, test_X, test_Y)'''
 #images shape = (50000,32,32,3)
 def train(images, labels):
     learning_rate = 0.1
-    sizelist = [32*32*3, 50, 10]
+    sizelist = [32*32, 50, 10]
     Network = Network_initail(sizelist)
     for m in range(len(images)):
         image = images[m]
+        grey = np.sum(image, axis=2)
         y = labels[m]
-        image = image.flatten()  # the RGB image is transfered to 3 layer of monochromatic image in a row array
-        image.shape = (image.shape[0], 1)
+        grey = grey.flatten()  # the RGB image is transfered to 3 layer of monochromatic image in a row array
+        grey.shape = (grey.shape[0], 1)
         y.shape = (y.shape[0], 1)
-        Network = FP_process(Network, image)
+        Network = FP_process(Network, grey)
         Network = BP_process(Network, y)
         for l in range(len(Network) - 1):
             ll = l + 1
