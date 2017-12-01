@@ -351,6 +351,7 @@ def conv_forward_naive(x, w, b, conv_param):
       W' = 1 + (W + 2 * pad - WW) / stride
     - cache: (x, w, b, conv_param)
     """
+    x_pad = np.pad(x, ((0,0),(0,0),(1,1),(1,1)), 'constant', constant_values=0)
     N = x.shape[0]
     C = x.shape[1]
     H = x.shape[2]
@@ -360,14 +361,13 @@ def conv_forward_naive(x, w, b, conv_param):
     WW = w.shape[3]
     pad = conv_param['pad']
     stride = conv_param['stride']
-    H_new = int(1 + (H + 2 * pad - HH) / stride)
-    W_new = int(1 + (W + 2 * pad - WW) / stride)
+    H_new = int(1 + (H + 2 * pad - HH) / stride)  #
+    W_new = int(1 + (W + 2 * pad - WW) / stride)  #
     out = np.random.randn(N,F,H_new,W_new)
     ###########################################################################
     # TODO: Implement the convolutional forward pass.                         #
     # Hint: you can use the function np.pad for padding.                      #
     ###########################################################################
-    pass
     for img in range(len(x)):
         for ftr in range(len(w)):
             for num in range(H_new * W_new):
@@ -377,9 +377,9 @@ def conv_forward_naive(x, w, b, conv_param):
                 else:
                     region_row = int((num + 1) / W_new) + 1
                     region_colum = (num + 1) % W_new
-                region_x = stride * (region_colum - 1)
-                region_y = stride * (region_row - 1)
-                region = x[img, :, region_x:region_x + 1, region_y:region_y + 1]  # attention
+                region_y = stride * (region_colum - 1)
+                region_x = stride * (region_row - 1)
+                region = x[img, :, region_x:region_x + 4, region_y:region_y + 4]  # attention
                 filter = w[ftr]
                 out[img, ftr, region_row - 1, region_colum - 1] = np.sum(region * filter) + b[ftr]
     ###########################################################################
@@ -407,6 +407,46 @@ def conv_backward_naive(dout, cache):
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
     pass
+    # dout has the same size of out N F H_new W_new
+    x, w, b, conv_param = cache
+    pad = conv_param['pad']
+    stride = conv_param['stride']
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+    N, F, H_out, W_out = dout.shape
+    x_pad = np.pad(x, ((0,0), (0,0), (pad,pad), (pad,pad)), 'constant', constant_values=0)
+
+    dx = np.zeros((N, C, H, W))
+    dw = np.zeros((F, C, HH, WW))
+    db = np.zeros(F)
+    # backward dw and db
+    for ftr in range(F):
+        for cnl in range(C):
+            for hh in range(HH):
+                for ww in range(WW):
+                    sub_x_pad = x_pad[:, ftr, hh:hh+stride*H_out:stride, ww:ww+stride*W_out:stride]
+                    dw[ftr][cnl][hh][ww] = np.sum(sub_x_pad * dout[:,ftr,:,:])  # the sum means
+    for ftr in range(F):
+        db[ftr] = np.sum(dout[:,ftr,:,:])
+
+    # backward dx
+    dx = np.zeros((N, C, H, W))
+    for nprime in range(N):
+        for i in range(H):
+            for j in range(W):
+                for f in range(F):
+                    for k in range(H_out):
+                        for l in range(H_out):
+                            mask1 = np.zeros_like(w[f, :, :, :])
+                            mask2 = np.zeros_like(w[f, :, :, :])
+                            if (i + pad - k * stride) < HH and (i + pad - k * stride) >= 0:
+                                mask1[:, i + pad - k * stride, :] = 1.0
+                            if (j + pad - l * stride) < WW and (j + pad - l * stride) >= 0:
+                                mask2[:, :, j + pad - l * stride] = 1.0
+                            w_masked = np.sum(
+                                w[f, :, :, :] * mask1 * mask2, axis=(1, 2))
+                            dx[nprime, :, i, j] += dout[nprime, f, k, l] * w_masked
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
