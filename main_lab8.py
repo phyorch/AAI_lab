@@ -1,9 +1,10 @@
 import random
-
+import numpy as np
 import matplotlib.pyplot as plt
 
 import cifar10
 from lab8 import predict, train
+import KNN
 
 
 def plot_9images(images, cls_idx_true, cls_idx_pred=None, all_cls_names=None, smooth=True):
@@ -53,7 +54,18 @@ def plot_9images(images, cls_idx_true, cls_idx_pred=None, all_cls_names=None, sm
     # Ensure the plot is shown correctly with multiple plots
     # in a single Notebook cell.
     plt.show()
+def knn():
+    class_names = cifar10.load_class_names()
+    images_train, cls_idx_train, labels_train = cifar10.load_training_data()
+    images_test, cls_idx_test, labels_test = cifar10.load_test_data()
 
+    # Plot the first 9 training images and labels
+    plot_9images(images=images_train[0:9], cls_idx_true=cls_idx_train[0:9],
+                 all_cls_names=class_names, smooth=True)
+    cls_idx_pred = KNN.Euclidian(images_train, images_test, cls_idx_train)
+    samples = random.sample(range(len(images_test)), 9)
+    plot_9images(images=images_test[samples], cls_idx_true=cls_idx_test[samples],
+                 cls_idx_pred=cls_idx_pred, all_cls_names=class_names, smooth=True)
 
 def main():
     class_names = cifar10.load_class_names()
@@ -67,9 +79,11 @@ def main():
     # Build your predictor
     Network = train(images_train, labels_train)
 
+
     # Visualize your prediction
     samples = random.sample(range(len(images_test)), 9)
     cls_idx_pred = predict(images_test[samples], cls_idx_test[samples], Network)
+
     plot_9images(images=images_test[samples], cls_idx_true=cls_idx_test[samples],
                  cls_idx_pred=predict(images_test[samples], cls_idx_test, Network), all_cls_names=class_names, smooth=True)
 

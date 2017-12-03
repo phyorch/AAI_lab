@@ -69,16 +69,16 @@ right, accuracy, predict = Test(Network, test_X, test_Y)'''
 #images shape = (50000,32,32,3)
 def train(images, labels):
     learning_rate = 0.1
-    sizelist = [32*32, 50, 10]
+    sizelist = [32*32*3, 50, 10]
     Network = Network_initail(sizelist)
     for m in range(len(images)):
         image = images[m]
-        grey = np.sum(image, axis=2)
+        #grey = np.sum(image, axis=2)
         y = labels[m]
-        grey = grey.flatten()  # the RGB image is transfered to 3 layer of monochromatic image in a row array
-        grey.shape = (grey.shape[0], 1)
+        image = image.flatten()  # the RGB image is transfered to 3 layer of monochromatic image in a row array
+        image.shape = (image.shape[0], 1)
         y.shape = (y.shape[0], 1)
-        Network = FP_process(Network, grey)
+        Network = FP_process(Network, image)
         Network = BP_process(Network, y)
         for l in range(len(Network) - 1):
             ll = l + 1
