@@ -29,10 +29,19 @@ LEARNING_RATE = 0.02
 EPOCHS = 10
 EPOCH_SIZE = 100
 BACH_SIZE = 32
+OBSERVATION = 1000
 EPSILON_UP = 0.1
 EPSILON_LOW = 0.01
 MEMORY_SIZE = 1000000
 EXPLORATION_SIZE = 3000000
+
+
+def setup():
+    global env
+    env = gym.make('Breakout-v0')
+    print('action space: ', env.action_space)
+    print('observation space', env.observation_space)
+
 
 def model():
     'build our model'
@@ -62,16 +71,19 @@ def input_process(observe, state, init=False):
 
     if init==True:
         state = np.stack((input, input, input, input), axis=-1)
+        state = state.reshape(1,state.shape[0],state.shape[1],state.shape[2])
     else:
-        state.popleft()
-        state.append(input)
+        input = input.reshape(1,input.shape[0],input.shape[1],1)
+        np.append(input, state[:,:,:,:3], axis=3)
     return state
 
 def epoch_initialize(env):
     env.reset()
-    observation, reward, done, info = env.step()
-    state = input_process(observation, True)
+    observation, reward, done, info = env.step(0)
+
+    state = input_process(observation, None, True)
     epsilon = EPSILON_UP
+
     return state, epsilon
 
 '''In this function, we use minibatch coming from dataset 
@@ -108,7 +120,7 @@ def model_run(model, env):
         episod = 0
         Dataset = deque()
         state_prior, epsilon = epoch_initialize(env)
-        for t in EPOCH_SIZE:
+        for t in range(EPOCH_SIZE):
             loss = 0
             action = 0
             reward = 0
@@ -131,19 +143,20 @@ def model_run(model, env):
             Dataset.append((state_prior, action, reward, state_post, done))
             if len(Dataset)>MEMORY_SIZE:
                 Dataset.popleft()
-            loss = model_train(model, Dataset, loss)
+            if t==OBSERVATION:
+                print('--Observation is over, training now')
+            if t>OBSERVATION:
+                loss = model_train(model, Dataset, loss)
             state_prior = state_post
 
+
+
 if __name__ == '__main__':
-    config = tf.ConfigProto
-    sess = tf.Session(config=config)
+    #config = tf.ConfigProto
+    #sess = tf.Session(config=config)
     from keras import backend as K
-    K.set_session(sess)
-    K.set_image_dim_ordering('tf')
-
-
-
-
-
-
-
+    #K.set_session(sess)
+    #K.set_image_dim_ordering('tf')
+    model = model()
+    setup()
+    model_run(model, env)
