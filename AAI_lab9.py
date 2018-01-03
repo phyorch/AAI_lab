@@ -14,9 +14,12 @@ from skimage.viewer import ImageViewer
 import gym
 import random
 from collections import deque
+
+import matplotlib as plt
 import json
 import argparse
 import time
+
 
 # INTERNAL
 #import lib.notify as notify
@@ -27,9 +30,10 @@ GAMA = 0.95
 ACTION_SPACE_SIZE = 4
 LEARNING_RATE = 0.02
 EPOCHS = 10
-EPOCH_SIZE = 100
+EPOCH_SIZE = 300000
+REPORT = 200
 BACH_SIZE = 32
-OBSERVATION = 1000
+OBSERVATION = 300
 EPSILON_UP = 0.1
 EPSILON_LOW = 0.01
 MEMORY_SIZE = 1000000
@@ -68,7 +72,10 @@ def input_process(observe, state, init=False):
     input = skimage.color.rgb2grey(observe)
     input = skimage.transform.resize(input, (110,84), mode='constant', preserve_range=True)
     input = skimage.util.crop(input, ((19,7),(0,0)))
-
+    # fig = plt.figure()
+    # ax = fig.add_subplot(121)
+    # ax.imshow(input)
+    # plt.show()
     if init==True:
         state = np.stack((input, input, input, input), axis=-1)
         state = state.reshape(1,state.shape[0],state.shape[1],state.shape[2])
@@ -79,7 +86,7 @@ def input_process(observe, state, init=False):
 
 def epoch_initialize(env):
     env.reset()
-    observation, reward, done, info = env.step(0)
+    observation, reward, done, info = env.step(env.action_space.sample())
 
     state = input_process(observation, None, True)
     epsilon = EPSILON_UP
@@ -92,7 +99,7 @@ X is the input image(state)
 Y is the value list of Q as the effect of each action
 There is something important that in DQL, the loss function 
 is always changing because Q value will update at every episod'''
-def model_train(model, Dataset, loss):
+def model_train(model, Dataset):
     minibatch = np.random.sample(Dataset, BACH_SIZE)
     for i in range(BACH_SIZE):
         state_prior, action, reward, state_post, done = minibatch[i]
@@ -107,13 +114,15 @@ def model_train(model, Dataset, loss):
         if done:
             Y[i, action] = reward
         else: Y[i, action] = reward + GAMA*np.max(Q_post)
-    loss += model.train_on_batch(X, Y)
-    return loss
+    model.fit(X, Y, BACH_SIZE, verbose=0)
+    #loss += model.train_on_batch(X, Y)
+    #return loss
 
 
 
-# we train the model EPOCHS times. In each epoch, we do traing by episod steps
+'''we train the model EPOCHS times. In each epoch, we do traing by episod steps'''
 def model_run(model, env):
+    #report = 0
     global epsilon
     for epocch in range(EPOCHS):
         reward_total = 0
@@ -121,6 +130,7 @@ def model_run(model, env):
         Dataset = deque()
         state_prior, epsilon = epoch_initialize(env)
         for t in range(EPOCH_SIZE):
+            env.render()
             loss = 0
             action = 0
             reward = 0
@@ -136,7 +146,7 @@ def model_run(model, env):
             observation, reward, done, info = env.step(action)
             if done:
                 episod +=1
-                print('game '+episod+' is over')
+                print('game ', episod, ' is over')
                 break
             state_post = input_process(observation, state_prior)
             reward_total += reward
@@ -146,17 +156,23 @@ def model_run(model, env):
             if t==OBSERVATION:
                 print('--Observation is over, training now')
             if t>OBSERVATION:
-                loss = model_train(model, Dataset, loss)
+                model_train(model, Dataset)
+            if t/REPORT==0:
+                print('runing times:  ', time.time())
+                print('total reward:  ',reward_total)
+                print('current epsilon:  ', epsilon)
             state_prior = state_post
 
 
 
 if __name__ == '__main__':
-    #config = tf.ConfigProto
+    total_run_time_start = time.time()
+    setup()
+    # load weight
+    #config = tf.ConfigProto()
     #sess = tf.Session(config=config)
-    from keras import backend as K
+    #from keras import backend as K
     #K.set_session(sess)
     #K.set_image_dim_ordering('tf')
     model = model()
-    setup()
     model_run(model, env)
